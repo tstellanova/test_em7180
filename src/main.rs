@@ -23,11 +23,10 @@ use stm32f4xx_hal as p_hal;
 use p_hal::prelude::*;
 use p_hal::stm32 as stm32;
 use stm32::I2C1;
-// use p_hal::gpio::GpioExt;
+use p_hal::gpio::GpioExt;
 // use p_hal::rcc::RccExt;
 
 use em7180::USFS;
-use cortex_m::asm::bkpt;
 
 #[macro_use]
 extern crate cortex_m_rt;
@@ -37,6 +36,8 @@ extern crate cortex_m_rt;
 //type DebugLog = cortex_m_log::printer::dummy::Dummy;
 type DebugLog = cortex_m_log::printer::semihosting::Semihosting<cortex_m_log::modes::InterruptFree, cortex_m_semihosting::hio::HStdout>;
 
+
+// type GpioTypeUserLed1 =  p_hal::gpio::gpioc::PC13<p_hal::gpio::Output<p_hal::gpio::PushPull>>; //stm32f401CxUx
 
 pub type I2cPortType = p_hal::i2c::I2c<I2C1,
     (p_hal::gpio::gpiob::PB8<p_hal::gpio::AlternateOD<p_hal::gpio::AF4>>,
@@ -66,6 +67,7 @@ fn get_debug_log() -> DebugLog {
 
 #[entry]
 fn main() -> ! {
+    let mut log = get_debug_log();
 
     let dp = stm32::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
@@ -80,6 +82,11 @@ fn main() -> ! {
     let mut delay_source =  p_hal::delay::Delay::new(cp.SYST, clocks);
 
     let gpiob = dp.GPIOB.split();
+    let gpioc = dp.GPIOC.split();
+
+    let mut user_led1 = gpioc.pc13.into_push_pull_output(); //f401CxUx
+    //set initial states of user LEDs
+    user_led1.set_high().unwrap();
 
     // setup i2c1 and imu driver
     // NOTE: stm32f401CxUx lacks external pull-ups on i2c pins
@@ -100,14 +107,37 @@ fn main() -> ! {
                                       0, //unused for now
                                       false).unwrap();
 
-    let mut log = get_debug_log();
+
+    let fflags = driver.check_feature_flags().unwrap_or(0);
+    if fflags != 0x05 { //barometer + temperature sensor installed
+        d_println!(log, "fflags {}", fflags);
+   }
+
+    delay_source.delay_ms(1u8);
+
     loop {
+        if let Ok(err_check) = driver.check_errors() {
+            if 0 != err_check {
+                d_println!(log, "err {:?}", err_check);
+                break;
+            }
+        }
         if driver.quat_available() {
-            bkpt();
-            if let Ok(quat) = driver.read_sentral_quat_qata() {
+            //bkpt();
+            let qata =  driver.read_sentral_quat_qata();
+            if let Ok(quat) = qata {
                 d_println!(log, "{:?}", quat);
+            }
+            else {
+                d_println!(log, "{:?}", qata);
             }
         }
         delay_source.delay_ms(1u8);
+        user_led1.toggle().unwrap();
+    }
+
+    loop {
+        // we reach here if something went wrong
+        delay_source.delay_ms(250u8);
     }
 }
