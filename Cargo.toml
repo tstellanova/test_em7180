@@ -1,0 +1,23 @@
+[package]
+authors = ["Todd Stellanova <tstellanova@users.noreply.github.com>"]
+edition = "2018"
+readme = "README.md"
+name = "test_em7180"
+version = "0.1.0"
+
+[dependencies]
+cortex-m = "0.6.0"
+cortex-m-rt = "0.6.10"
+cortex-m-semihosting = "0.3.3"
+panic-halt = "0.2.0"
+panic-semihosting = "0.5.3"
+cortex-m-log = { version = "0.6.1", features = ["log-integration", "itm", "semihosting"] }
+
+
+em7180 = { path = "../em7180-rs" }
+#em7180 = { git = "https://github.com/tstellanova/em7180-rs.git" }
+
+stm32f4 = {version = "0.10.0", features = ["stm32f401"] }
+#stm32f4xx-hal = { version = "0.6.0", features = ["stm32f401", "rt"] }
+stm32f4xx-hal = { git = "https://github.com/stm32-rs/stm32f4xx-hal", features = ["stm32f401", "rt"] }
+
