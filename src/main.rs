@@ -185,9 +185,8 @@ fn run_it() -> ! {
         .internal_pull_up(true)
         .set_open_drain();
     let i2c_port = p_hal::i2c::I2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), clocks);
-    let i2c_bus = shared_bus::CortexMBusManager::new(i2c_port);
 
-    let mut ahrs = USFS::new_inv_usfs_03(i2c_bus.acquire(),
+    let mut ahrs = USFS::new_inv_usfs_03(i2c_port,
                                          em7180::EM7180_DEFAULT_ADDRESS,
                                          0, //unused for now
                                       false).unwrap();
