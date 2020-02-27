@@ -29,14 +29,10 @@ use stm32f3xx_hal as p_hal;
 
 use p_hal::prelude::*;
 use p_hal::stm32;
-// use stm32::I2C1;
-// use p_hal::gpio::GpioExt;
-// use p_hal::rcc::RccExt;
 
 use em7180::USFS;
 use cortex_m::asm::bkpt;
-// use embedded_graphics::{image::Image1BPP, prelude::*};
-// use ssd1306::{prelude::*, Builder as SSD1306Builder};
+
 
 #[macro_use]
 extern crate cortex_m_rt;
@@ -74,7 +70,6 @@ fn get_debug_log() -> DebugLog {
 
 #[cfg(feature = "stm32f3x")]
 fn run_it() -> ! {
-
     let dp = stm32::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 
@@ -84,8 +79,6 @@ fn run_it() -> ! {
 
     // HSI: use default internal oscillator
     let clocks = rcc.cfgr.freeze(&mut flash.acr);
-
-    // let clocks = rcc.cfgr.freeze();
     // HSE: external crystal oscillator must be connected
     //let clocks = rcc.cfgr.use_hse(SystemCoreClock.hz()).freeze();
 
@@ -102,57 +95,24 @@ fn run_it() -> ! {
     let scl = gpiob.pb8
         .into_open_drain_output(&mut gpiob.moder, &mut gpiob.otyper)
         .into_af4(&mut gpiob.moder, &mut gpiob.afrh);
-    //scl.internal_pull_up(&mut gpiob.pupdr, true);
 
     let sda = gpiob.pb9
         .into_open_drain_output(&mut gpiob.moder, &mut gpiob.otyper)
         .into_af4(&mut gpiob.moder, &mut gpiob.afrh);
-    //sda.internal_pull_up(&mut gpiob.pupdr, true);
 
     let i2c_port = p_hal::i2c::I2c::i2c1(
         dp.I2C1, (scl, sda), 400.khz(), clocks, &mut rcc.apb1);
-
-    //let i2c_bus = shared_bus::CortexMBusManager::new(i2c_port);
-
-    // // setup i2c1 and imu driver
-    // // NOTE: stm32f401CxUx lacks external pull-ups on i2c pins
-    // // NOTE: eg f407 discovery board already has external pull-ups
-    // let scl = gpiob.pb8
-    //     .into_alternate_af4()
-    //     .internal_pull_up(true)
-    //     .set_open_drain();
-    //
-    // let sda = gpiob.pb9
-    //     .into_alternate_af4()
-    //     .internal_pull_up(true)
-    //     .set_open_drain();
-    // let i2c_port = p_hal::i2c::I2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), clocks);
 
     let mut ahrs = USFS::new_inv_usfs_03(i2c_port, //i2c_bus.acquire(),
                                          em7180::EM7180_DEFAULT_ADDRESS,
                                          0, //unused for now
                                            false).unwrap();
 
-
     // let fflags = ahrs.check_feature_flags().unwrap_or(0);
     // if fflags != 0x05 { //barometer + temperature sensor installed
     //     d_println!(get_debug_log(), "fflags {}", fflags);
     // }
 
-    // // Set up the display
-    // let mut disp: GraphicsMode<_> = SSD1306Builder::new().connect_i2c(i2c_bus.acquire()).into();
-    // disp.init().unwrap();
-    // disp.flush().unwrap();
-    //
-    // // Display the rustacean
-    // // let im = Image1BPP::new(include_bytes!("./ssd1306-image.data"), 128, 64);
-    // let im = Image1BPP::new(include_bytes!("./compass_64.raw"), 64, 64);
-    // disp.draw(im.into_iter());
-    // disp.flush().unwrap();
-    //
-    // // Set up state for the loop
-    // let mut orientation = DisplayRotation::Rotate0;
-    // disp.set_rotation(orientation).unwrap();
 
     //set initial states of user LEDs
     user_led1.set_low().unwrap();
@@ -161,10 +121,6 @@ fn run_it() -> ! {
     //cortex_m::asm::delay(1_000);
 
     loop {
-        // disp.set_rotation(orientation).unwrap();
-        // disp.flush().unwrap();
-        // orientation = get_next_rotation(orientation);
-
         // if let Ok(err_check) = ahrs.check_errors() {
         //     if 0 != err_check {
         //         d_println!(get_debug_log(), "err {:?}", err_check);
@@ -184,7 +140,6 @@ fn run_it() -> ! {
             }
             else {
                 user_led1.set_high().unwrap();
-
                // user_led1.toggle().unwrap();
             }
         }
@@ -193,7 +148,6 @@ fn run_it() -> ! {
     }
 
     //panic!("early termination")
-
 
 }
 
@@ -244,21 +198,6 @@ fn run_it() -> ! {
         d_println!(get_debug_log(), "fflags {}", fflags);
    }
 
-    // Set up the display
-    let mut disp: GraphicsMode<_> = SSD1306Builder::new().connect_i2c(i2c_bus.acquire()).into();
-    disp.init().unwrap();
-    disp.flush().unwrap();
-
-    // Display the rustacean
-    let im = Image1BPP::new(include_bytes!("./haxors_128.raw"), 128, 64);
-    disp.draw(im.into_iter());
-    disp.flush().unwrap();
-
-    // Set up state for the loop
-    let mut orientation = DisplayRotation::Rotate0;
-    disp.set_rotation(orientation).unwrap();
-
-
     //set initial states of user LEDs
     user_led1.set_high().unwrap();
 
@@ -266,10 +205,6 @@ fn run_it() -> ! {
 
 
     loop {
-        disp.set_rotation(get_next_rotation(orientation)).unwrap();
-        disp.flush().unwrap();
-        orientation = get_next_rotation(orientation);
-
         if let Ok(err_check) = ahrs.check_errors() {
             if 0 != err_check {
                 d_println!(get_debug_log(), "err {:?}", err_check);
@@ -302,14 +237,7 @@ fn run_it() -> ! {
 
 }
 
-// pub fn get_next_rotation(rotation: DisplayRotation) -> DisplayRotation {
-//     return match rotation {
-//         DisplayRotation::Rotate0 => DisplayRotation::Rotate90,
-//         DisplayRotation::Rotate90 => DisplayRotation::Rotate180,
-//         DisplayRotation::Rotate180 => DisplayRotation::Rotate270,
-//         DisplayRotation::Rotate270 => DisplayRotation::Rotate0,
-//     };
-// }
+
 
 
 #[entry]

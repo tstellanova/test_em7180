@@ -13,9 +13,9 @@ panic-halt = "0.2.0"
 panic-semihosting = "0.5.3"
 cortex-m-log = { version = "0.6.1", features = ["log-integration", "itm", "semihosting"] }
 
-shared-bus = {version = "0.1.4", features = ["cortexm"] }
-ssd1306 = "0.2.6"
-embedded-graphics = "0.4.9"
+#shared-bus = {version = "0.1.4", features = ["cortexm"] }
+#ssd1306 = "0.2.6"
+#embedded-graphics = "0.4.9"
 
 
 #em7180 = { path = "../em7180-rs" }
@@ -35,7 +35,7 @@ stm32f3xx-hal = { git = "https://github.com/stm32-rs/stm32f3xx-hal",  features =
 
 
 [features]
-default = ["stm32f3x"]
+default = ["stm32f4x"]
 stm32f3x = [ "stm32f3", "stm32f3xx-hal"]
 stm32f4x = [ "stm32f4", "stm32f4xx-hal"]
 stm32h7x = ["stm32h7", "stm32h7xx-hal"]
